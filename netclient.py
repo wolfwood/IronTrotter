@@ -2,20 +2,15 @@ import pickle
 import StringIO
 
 from twisted.internet import reactor, protocol
-
 from twisted.protocols.basic import LineReceiver
 
 from stats import Stats
-
 from update import Update, nullUpdate
 
 class TrotterSub(LineReceiver):
-    #def __init__(self):
-    #    self.factory.transport = self.transport
-
     def connectionMade(self):
         self.factory.transport = self
-        self.sendLine(pickle.dumps(nullUpdate, 2))
+        self.factory.sendUpdate(nullUpdate)
 
     def lineReceived(self, data):
         stringIO = StringIO.StringIO(data)
@@ -26,7 +21,6 @@ class TrotterSub(LineReceiver):
             try:
                 s = up.load()
             except EOFError:
-                print "EOF when reading from socket"
                 break
 
     def connectionLost(self, reason):
@@ -45,3 +39,6 @@ class TrotterSubFactory(protocol.ClientFactory):
     def clientConnectionLost(self, connector, reason):
         print "Connection lost - goodbye!"
         reactor.stop()
+
+    def sendUpdate(self, up):
+        self.transport.sendLine(pickle.dumps(up,2))
